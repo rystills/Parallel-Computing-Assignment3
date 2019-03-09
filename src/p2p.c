@@ -73,7 +73,6 @@ int main(int argc, char* argv[]) {
 	}
 	unsigned long *recv_data = malloc(!rank ? elementsPerProc * sizeof(unsigned long) : 0);
 	unsigned long long recv_sum = -1;
-	if (!DEBUG) freopen("STDOUT_1.txt", "w", stdout);
 
 	//execute point to point reduction
 	unsigned long long start_cycles = GetTimeBase();
