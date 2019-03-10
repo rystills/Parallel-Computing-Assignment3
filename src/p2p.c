@@ -12,7 +12,7 @@
 #define GetTimeBase MPI_Wtime
 #define processor_frequency 1.0
 #endif
-#define DEBUG false
+#define DEBUG true
 #define numEntries 1073741824
 
 //MPI data
@@ -71,31 +71,31 @@ int main(int argc, char* argv[]) {
 	for (unsigned long i = 0; i < elementsPerProc; ++i) {
 		inputData[i] = rank*elementsPerProc + i;
 	}
-	unsigned long *recv_data = malloc(!rank ? elementsPerProc * sizeof(unsigned long) : 0);
-	unsigned long long recv_sum = -1;
+	unsigned long long localSum = -1, recv_sum = -1;
 
 	//execute point to point reduction
 	unsigned long long start_cycles = GetTimeBase();
 	MPI_P2P_Reduce(inputData, &recv_sum, elementsPerProc, MPI_UNSIGNED_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
+	double time_in_secs = (GetTimeBase() - start_cycles) / processor_frequency;
 	//only rank 0 needs to write the output
 	if (!rank) {
 		printf("%llu%s",recv_sum, DEBUG ? " " : "\n");
-		if (DEBUG) fprintf(stderr, "P2P Execution time: %fs\n",(GetTimeBase() - start_cycles) / processor_frequency);
+		if (DEBUG) fprintf(stdout, "P2P Execution time: %fs\n",time_in_secs);
 	}
 
 	//execute collective reduction
 	start_cycles = GetTimeBase();
-	MPI_Reduce(inputData, recv_data, elementsPerProc, MPI_UNSIGNED_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
-	//only rank 0 needs to sum the final array and write the output
+	//sum the elements locally on each rank so that we don't have to allocate an additional temp array for MPI_SUM result storage
+	for (unsigned long i = 0; i < elementsPerProc; localSum += inputData[i++]);
+	MPI_Reduce(&localSum, &recv_sum, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, 0, MPI_COMM_WORLD);
+	time_in_secs = (GetTimeBase() - start_cycles) / processor_frequency;
+	//only rank 0 needs to write the output
 	if (!rank) {
-		unsigned long long sum = 0;
-		for (unsigned long i = 0; i < elementsPerProc; sum += recv_data[i++]);
-		printf("%llu%s",sum, DEBUG ? " " : "\n");
-		if (DEBUG) fprintf(stderr, "COL Execution time: %fs\n",(GetTimeBase() - start_cycles) / processor_frequency);
+		printf("%llu%s",recv_sum, DEBUG ? " " : "\n");
+		if (DEBUG) fprintf(stdout, "COL Execution time: %fs\n",time_in_secs);
 	}
 
 	//all done
 	MPI_Finalize();
 	free(inputData);
-	free(recv_data);
 }
