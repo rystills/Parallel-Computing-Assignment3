@@ -1,4 +1,4 @@
-#define BGQ 1 // when running BG/Q, comment out when running on mastiff
+//#define BGQ 1 // when running BG/Q, comment out when running on mastiff
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -12,7 +12,7 @@
 #define GetTimeBase MPI_Wtime
 #define processor_frequency 1.0
 #endif
-#define DEBUG true
+#define DEBUG false
 #define numEntries 1073741824
 
 //MPI data
@@ -39,11 +39,11 @@ void MPI_P2P_Reduce(unsigned long* send_data, unsigned long long* recv_data, int
 	MPI_Status status;
 	unsigned long long buffer;
 	for (int i = 1; i <= numRanks/2; i*=2) {
-		//receiver
+		//receiver receives a pairwise sum from node rank+i
 		if (rank % (i*2) == 0) {
 			MPI_Irecv(&buffer, 1, MPI_UNSIGNED_LONG_LONG, rank+i, 0, MPI_COMM_WORLD, &request);
 		}
-		//sender
+		//sender sends a pairwise sum to node rank-i
 		else {
 			MPI_Isend(recv_data, 1, MPI_UNSIGNED_LONG_LONG, rank-i, 0, MPI_COMM_WORLD, &request);
 			return;
