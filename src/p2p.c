@@ -1,4 +1,4 @@
-//#define BGQ 1 // when running BG/Q, comment out when running on mastiff
+#define BGQ 1 // when running BG/Q, comment out when running on mastiff
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
