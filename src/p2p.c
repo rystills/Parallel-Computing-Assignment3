@@ -71,7 +71,7 @@ int main(int argc, char* argv[]) {
 	for (unsigned long i = 0; i < elementsPerProc; ++i) {
 		inputData[i] = rank*elementsPerProc + i;
 	}
-	unsigned long long localSum = -1, recv_sum = -1;
+	unsigned long long localSum = 0, recv_sum = 0;
 
 	//execute point to point reduction
 	unsigned long long start_cycles = GetTimeBase();
