@@ -13,7 +13,7 @@
 #define processor_frequency 1.0
 #endif
 #define DEBUG false
-#define numEntries 1073741824
+#define numEntries 2<<29
 
 //MPI data
 int numRanks = -1; //total number of ranks in the current run
@@ -32,13 +32,12 @@ int elementsPerProc = -1; //stores how many elements each process is responsible
  */
 void MPI_P2P_Reduce(unsigned long* send_data, unsigned long long* recv_data, int count, MPI_Datatype datatype, MPI_Op op, int root, MPI_Comm communicator) {
 	//calculate this rank's sum
-	*recv_data = 0;
 	for (unsigned long i = 0; i < count; *recv_data += send_data[i++]);
 	//pairwise add across ranks
 	MPI_Request request;
 	MPI_Status status;
 	unsigned long long buffer;
-	for (int i = 1; i <= numRanks/2; i*=2) {
+	for (int i = 1; i < numRanks; i*=2) {
 		//receiver receives a pairwise sum from node rank+i
 		if (rank % (i*2) == 0) {
 			MPI_Irecv(&buffer, 1, MPI_UNSIGNED_LONG_LONG, rank+i, 0, MPI_COMM_WORLD, &request);
@@ -64,7 +63,7 @@ int main(int argc, char* argv[]) {
 	MPI_Init(&argc, &argv);
 	MPI_Comm_size(MPI_COMM_WORLD, &numRanks);
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-	elementsPerProc = numEntries/(float)numRanks;
+	elementsPerProc = (numEntries)/(float)numRanks;
 
 	//populate deterministic input data
 	unsigned long *inputData = malloc(elementsPerProc * sizeof(unsigned long));
